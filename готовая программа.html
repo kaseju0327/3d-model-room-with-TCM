@@ -1,0 +1,1800 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <!--код написан Чудиновских-->
+    <meta charset="UTF=8"> <!--кодировка-->
+    <meta name="viewport" content="width=device-width, instal-scale=1.0">
+    <title>3d моделирование комнаты с применением ТСО оффлайн</title>
+    <!--подключение локальной библиотеки стиля-->
+    <link rel="stylesheet" href="./fontawesome/css/all.min.css">
+    <style>
+        /*основные стили*/
+        /*цветовая схема базовая и сброс отступов*/
+        * {
+            box-sizing: border-box;
+            margin: 0; 
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        html, body {
+            height: 100vh;
+            overflow: hidden;
+            background-color: #1a1a2e;
+            color: #e6e6e6;
+        }
+
+        body {
+        padding: 0;
+        }
+
+        .container {
+        height: 100vh;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+        max-width: 1600px;
+        margin: 0 auto;
+        }
+
+        /* настраиваем шапку */
+        header {
+        flex-shrink: 0;
+        text-align: center;
+        padding: 10px 0;
+        background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
+        color: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+        font-size: 1.8rem;
+        margin-bottom: 5px;
+        color: #e6e6e6;
+
+        }
+
+        .subtitle {
+        font-size: 0.9rem;
+        opacity: 0.9;
+
+        }
+
+        /* настраиваем 2 колонки */
+        .main-content {
+        flex: 1;
+        display: flex;
+        gap: 25px;
+        overflow: hidden;
+        min-height: 0;
+
+        }
+
+        /* настраиваем левую колонку */
+          .controls-section {
+            flex: 1;
+            min-width: 400px;
+            background-color: #16213e;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        /* настраиваем правую колонку */
+
+        .view-section {
+        flex: 2;
+        min-width: 800px;
+        background-color: #16213e;
+        border-radius: 10px;
+        padding: 25px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+
+        }
+/* настраиваем заголовки секции */
+        .section-title {
+        font-size: 1.8rem;
+        margin-bottom: 20px;
+        color: #e6e6e6;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #0f3460;
+        flex-shrink: 0;
+
+        }
+/* настраиваем сетку параметров комнаты */
+.room-controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
+    flex-shrink: 0;
+
+}
+    
+.control-group {
+display: flex;
+flex-direction: column;
+
+}
+
+label{
+font-weight: 600;
+margin-bottom: 8px;
+color: #b8b8b8;
+
+}
+
+input[type="number"], select {
+padding: 12px;
+background-color: #0f3460;
+border: 2px solid #1a5a9e;
+border-radius: 6px;
+font-size: 1rem;
+transition: border-color 0.3s;
+color: white;
+
+}
+
+input[type="number"]:focus, select:focus {
+border-color: #4cc9f0;
+outline: none;
+
+}
+
+input[type="range"] {
+width: 100%;
+margin: 8px 0 ;
+background: #0f3460;
+accent-color: #4cc9f0;
+}
+
+button{
+background-color: #1a5a9e;
+color: white;
+border: none;
+padding: 14px 20px;
+border-radius: 6px;
+cursor: pointer;
+font-size: 1rem;
+font-weight: 600;
+transition: background-color 0.3s, transform 0.2s;
+margin-top: 10px;
+
+
+}
+
+button:hover {
+background-color: #0f3460;
+
+transform: translateY(-2px);
+
+}
+button:active {
+
+background-color: #4cc9f0;
+color: #16213e;
+
+}
+
+/*контейнер для 3д комнаты*/
+#view3d-container {
+width: 100%;
+flex: 1 1 auto;
+background-color: #0f172a;
+border-radius: 8px;
+overflow: hidden;
+border: 2px solid #1a5a9e;
+position: relative;
+min-height: 0;
+
+}
+
+
+#loading{
+position: absolute;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
+color: white;
+font-size: 1.2;
+z-index: 10;
+
+}
+
+/*кнопки видов камеры*/
+
+.view-controls{
+display: flex;
+flex-wrap: wrap;
+gap: 10px;
+margin-top: 15px;
+margin-bottom: 15px;
+flex-shrink: 0;
+
+}
+
+.view-btn {
+padding: 10px 15px;
+margin: 0;
+
+}
+/*список ТСО*/
+
+.furniture-list {
+flex: 0 0 auto;
+max-height: 200px;
+display: flex;
+flex-direction: column;
+gap: 8px;
+overflow-y: auto;
+padding: 10px;
+border: 1px solid #1a5a9e;
+border-radius: 8px;
+background-color: #0f1a2b;
+margin-bottom: 10px;
+
+}
+
+.furniture-item {
+display: flex;
+align-items: center;
+gap: 12px;
+background-color: #0f3460;
+border-radius: 6px;
+padding: 8px 12px;
+cursor: grab;
+transition: background-color 0.2s, border-color 0.2s;
+border: 2px solid #1a5a9e;
+user-select: none;
+
+}
+
+.furniture-item:hover{
+background-color: #1a4a7a;
+border-color: #4cc9f0;
+
+
+}
+
+.furniture-icon {
+font-size: 1.6rem;
+width: 32px;
+text-align: center;
+
+}
+
+.furniture-name{
+font-weight: 600;
+flex: 1;
+
+}
+.furniture-size{
+font-size: 0.8rem;
+color:#b8b8b8;
+white-space:nowrap;
+
+
+}
+/*блок для справки*/
+
+
+.controls-info{
+background-color: #0f3460;
+padding: 15px;
+border-radius: 8px;
+border-left: 4px solid #4cc9f0;
+flex-shrink: 0;
+margin-top: 10px;
+}
+
+.controls-info h3{
+margin-bottom: 10px;
+color: #e6e6e6;
+}
+.controls-info ul{
+padding-left: 20px;
+}
+
+.controls-info li{
+margin-bottom: 8px;
+
+}
+
+
+/*statistika*/
+
+
+.stats{
+display: flex;
+justify-content: space-between;
+background-color: #0f3460;
+color: white;
+padding: 15px 25px;
+border-radius: 10px;
+margin-top: 20px;
+flex-shrink: 0;
+
+
+}
+/*knopki povorota*/
+
+.rotation-controls{
+display: flex;
+gap: 10px;
+margin-top: 15px;
+align-items: center;
+justify-content: center;
+flex-wrap: wrap;
+flex-shrink: 0;
+
+}
+
+.rotation-controls button{
+padding: 8px 15px;
+margin: 0;
+background-color: #1a5a9e;
+
+}
+
+.rotation-controls button:hover{
+background-color: #0f3460;
+
+}
+
+.toggle-zones-btn:hover{
+background-color: #0f3460;
+color: white;
+
+
+}
+
+/*кнопкки перемещения*/
+
+.move-controls {
+display: flex;
+gap: 5px;
+margin-top: 10px;
+justify-content: center;
+flex-wrap: wrap;
+flex-shrink: 0;
+
+}
+
+.move-btn{
+background-color: #1a5a9e;
+color: white;
+border: none;
+width: 40px;
+height: 40px;
+border-radius: 6px;
+cursor: pointer;
+font-size: 1.2rem;
+transition: background-color 0.3s;
+display: inline-flex;
+align-items: center;
+justify-content: center;
+margin: 0;
+
+}
+
+.move-btn:hover{
+background-color: #0f3460;
+transform: scale(1.1);
+
+}
+
+.remove-btn{
+background-color: #e63946;
+margin-left: 10px;
+}
+
+.remove-btn:hover{
+background-color: #c1121f;
+
+}
+
+/*панель выбранного устройства*/
+
+.selected-furniture{
+margin-top: 15px;
+padding: 15px;
+background-color: #0f3460;
+border-radius: 8px;
+border: 2px solid #4cc9f0;
+display: none;
+flex-shrink: 0;
+
+}
+
+.selected-furniture h3{
+color: #4cc9f0;
+margin-bottom: 10px;
+
+}
+.selected-furniture p{
+margin-bottom: 5px;
+
+}
+
+/*зона крепления*/
+
+
+.zone-properties {
+margin-top: 15px;
+padding: 15px;
+background-color: #0f3460;
+border-radius: 8px;
+border: 2px solid #4cc9f0;
+display: none;                  
+flex-shrink: 0;
+
+}
+.zone-properties h4 {
+color: #4cc9f0;
+margin-bottom: 15px;
+}
+.zone-properties .control-group {
+ margin-bottom: 10px;
+}
+/*ползунки поворота */
+.rotation-sliders {
+margin-top: 15px;
+padding: 10px;
+background: #0f1a2b;
+border-radius: 6px;
+}
+.rotation-sliders .control-group {
+margin-bottom: 12px;
+}
+.rotation-sliders label {
+display: flex;
+justify-content: space-between;   
+}
+.rotation-sliders span {
+color: #4cc9f0;
+}
+.reset-rotation {
+background-color: #4cc9f0;
+color: #16213e;
+margin-top: 5px;
+}
+/* кнопки сейв и лоад */
+.save-load-buttons {
+display: flex;
+gap: 10px;
+margin-top: 10px;
+flex-wrap: wrap;
+}
+.save-load-buttons button {
+flex: 1;                         
+margin-top: 0;
+}
+        
+@media (max-width: 1300px) {
+.main-content {
+flex-direction: column;      /* колонки превращаются в строки */
+}
+.controls-section, .view-section {
+min-width: 100%;
+height: auto;
+max-height: none;
+}
+#view3d-container {
+height: 400px;
+    }
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>3д моделирование комнаты с техническими средствами охраны(офлайн)</h1>
+            <p class="subtitle">размещение на полу, стенах,потолке. Настройка зон прозрачности , перемещение, поворот, сохранение и загрузка. </p>
+        </header>
+    <div class="main-content">
+<!--left column-->
+
+    <section class="controls-section">
+                <h2 class="section-title">Управление комнатой</h2>
+                
+                <!-- Параметры комнаты (сетка) -->
+                <div class="room-controls">
+                    <div class="control-group">
+                        <label for="length">Длина (м):</label>
+                        <input type="number" id="length" min="3" max="50" value="10">
+                    </div>
+                    <div class="control-group">
+                        <label for="width">Ширина (м):</label>
+                        <input type="number" id="width" min="3" max="50" value="8">
+                    </div>
+                    <div class="control-group">
+                        <label for="height">Высота (м):</label>
+                        <input type="number" id="height" min="2" max="10" value="3">
+                    </div>
+                    <div class="control-group">
+                        <label for="wallColor">Цвет стен:</label>
+                        <select id="wallColor">
+                            <option value="#f5f5dc">Бежевый</option>
+                            <option value="#ffffff">Белый</option>
+                            <option value="#add8e6">Голубой</option>
+                            <option value="#90ee90">Светло-зеленый</option>
+                            <option value="#d3d3d3">Светло-серый</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label for="floorColor">Цвет пола:</label>
+                        <select id="floorColor">
+                            <option value="#8b4513">Коричневый</option>
+                            <option value="#d2b48c">Бежевый</option>
+                            <option value="#696969">Серый</option>
+                            <option value="#228b22">Зеленый</option>
+                            <option value="#000080">Синий</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label for="wallOpacity">Прозрачность стен:</label>
+                        <input type="range" id="wallOpacity" min="0" max="1" step="0.01" value="0.2">
+                        <span id="opacityValue">0.2</span>
+                    </div>
+                    <div class="control-group">
+                        <label>&nbsp;</label> <!-- пустая метка для выравнивания -->
+                        <button id="create-room">Создать/Обновить</button>
+                    </div>
+                </div>
+                
+                <!-- Кнопки выбора вида камеры -->
+                <div class="view-controls">
+                    <button id="view-top" class="view-btn active"><i class="fas fa-eye"></i> Сверху</button>
+                    <button id="view-front" class="view-btn"><i class="fas fa-eye"></i> Спереди</button>
+                    <button id="view-left" class="view-btn"><i class="fas fa-eye"></i> Слева</button>
+                    <button id="view-right" class="view-btn"><i class="fas fa-eye"></i> Справа</button>
+                    <button id="view-free" class="view-btn"><i class="fas fa-sync-alt"></i> Свободный</button>
+                </div>
+                
+                <!-- Кнопка поворота на +45°, удаления и показа всех зон -->
+                <div class="rotation-controls">
+                    <button id="rotate-yaw-p"><i class="fas fa-undo-alt"></i> поворот +45°</button>
+                    <button id="remove-item" class="remove-btn"><i class="fas fa-trash"></i> Удалить</button>
+                    <button id="toggle-zones" class="toggle-zones-btn"><i class="fas fa-eye"></i> Показать все зоны</button>
+                </div>
+
+                <!-- Кнопки перемещения выбранного устройства -->
+                <div class="move-controls">
+                    <button class="move-btn" id="move-left" title="Влево (-X)"><i class="fas fa-arrow-left"></i></button>
+                    <button class="move-btn" id="move-right" title="Вправо (+X)"><i class="fas fa-arrow-right"></i></button>
+                    <button class="move-btn" id="move-up" title="Вверх (+Y)"><i class="fas fa-arrow-up"></i></button>
+                    <button class="move-btn" id="move-down" title="Вниз (-Y)"><i class="fas fa-arrow-down"></i></button>
+                    <button class="move-btn" id="move-forward" title="Вперёд (+Z)"><i class="fas fa-arrow-up" style="transform: rotate(90deg);"></i></button>
+                    <button class="move-btn" id="move-backward" title="Назад (-Z)"><i class="fas fa-arrow-down" style="transform: rotate(90deg);"></i></button>
+                </div>
+                
+                <!-- Кнопки сохранения и загрузки проекта -->
+                <div class="save-load-buttons">
+                    <button id="save-project"><i class="fas fa-save"></i> Сохранить проект</button>
+                    <button id="load-project"><i class="fas fa-folder-open"></i> Загрузить проект</button>
+                    <input type="file" id="load-file" accept=".json" style="display: none;"> <!-- скрытый input для загрузки -->
+                </div>
+                
+                <!-- Информация о выбранном устройстве-->
+                <div class="selected-furniture" id="selected-info" style="display: none;">
+                    <h3>Выбранное: <span id="selected-name">-</span></h3>
+                    <p>X: <span id="selected-x">0</span> Y: <span id="selected-y">0</span> Z: <span id="selected-z">0</span></p>
+                    <p>Размеры: <span id="selected-size">-</span></p>
+                    <p>Крепление: <span id="selected-mount">пол</span></p>
+                </div>
+
+                <!-- Блок настройки зоны, крепления и поворота-->
+                <div class="zone-properties" id="zone-properties">
+                    <h4>Настройки зоны и крепления</h4>
+                    <!-- Прозрачность зоны -->
+                    <div class="control-group">
+                        <label for="zone-opacity">Прозрачность зоны:</label>
+                        <input type="range" id="zone-opacity" min="0" max="1" step="0.01" value="0.3">
+                    </div>
+                    <!-- Параметры для сферы-->
+                    <div id="sphere-props" style="display:none;">
+                        <label for="sphere-radius">Радиус (м):</label>
+                        <input type="number" id="sphere-radius" min="0.1" max="20" step="0.1" value="3">
+                    </div>
+                    <!-- Параметры для конуса -->
+                    <div id="cone-props" style="display:none;">
+                        <label for="cone-angle">Угол (град):</label>
+                        <input type="number" id="cone-angle" min="1" max="180" step="1" value="60">
+                        <label for="cone-range">Дальность (м):</label>
+                        <input type="number" id="cone-range" min="0.1" max="20" step="0.1" value="5">
+                    </div>
+                    <!-- Выбор крепления -->
+                    <div class="control-group">
+                        <label for="mount-select">Крепление:</label>
+                        <select id="mount-select">
+                            <option value="floor">Пол</option>
+                            <option value="ceiling">Потолок</option>
+                            <option value="wall_front">Передняя стена (+Z)</option>
+                            <option value="wall_back">Задняя стена (-Z)</option>
+                            <option value="wall_left">Левая стена (-X)</option>
+                            <option value="wall_right">Правая стена (+X)</option>
+                        </select>
+                    </div>
+                    <!-- Трёхосевой поворот -->
+                    <div class="rotation-sliders">
+                        <h5>Поворот</h5>
+                        <div class="control-group">
+                            <label>вправо влево (Y) <span id="yaw-val">0°</span></label>
+                            <input type="range" id="rotate-yaw" min="0" max="360" step="1" value="0">
+                        </div>
+                        <div class="control-group">
+                            <label>вверх вниз (X) <span id="pitch-val">0°</span></label>
+                            <input type="range" id="rotate-pitch" min="0" max="360" step="1" value="0">
+                        </div>
+                        <div class="control-group">
+                            <label>вокруг себя (Z) <span id="roll-val">0°</span></label>
+                            <input type="range" id="rotate-roll" min="0" max="360" step="1" value="0">
+                        </div>
+                        <button id="reset-rotation" class="reset-rotation">Сброс поворота</button>
+                    </div>
+                </div>
+                
+                <!-- Краткая справка по управлению -->
+                <div class="controls-info">
+                    <h3>Управление</h3>
+                    <ul>
+                        <li>Выберите устройство, кликните по полу/стене/потолку</li>
+                        <li>Клик по устройству в 3D — выбор</li>
+                        <li>Перемещение кнопками (шаг 0.5 м)</li>
+                        <li>Поворот: ползунки или +45°</li>
+                        <li>Крепление меняется в списке</li>
+                        <li><strong>Кнопка "Показать все зоны"</strong> включает/отключает отображение зон всех устройств</li>
+                        <li><strong>Сохранить/Загрузить проект</strong> </li>
+                    </ul>
+                </div>
+            </section>
+            
+            <!-- ПРАВАЯ КОЛОНКА: 3D ПРОСМОТР + СПИСОК ТСО -->
+            <section class="view-section">
+                <h2 class="section-title">3D Просмотр</h2>
+                <!-- Контейнер для Three.js -->
+                <div id="view3d-container">
+                    <div id="loading">Загрузка 3D сцены...</div>
+                </div>
+                
+                <!-- Статистика комнаты -->
+                <div class="stats">
+                    <div class="stat-item">
+                        <h3>Площадь</h3>
+                        <p id="room-area">0 м²</p>
+                    </div>
+                    <div class="stat-item">
+                        <h3>Устройств</h3>
+                        <p id="furniture-count">0</p>
+                    </div>
+                    <div class="stat-item">
+                        <h3>Вид</h3>
+                        <p id="current-view">Сверху</p>
+                    </div>
+                </div>
+                
+                <h2 class="section-title">Технические средства охраны</h2>
+                <p>Выберите устройство и кликните в комнату</p>
+                
+                <!-- Список доступных ТСО -->
+                <div class="furniture-list" id="furniture-list">
+                 
+                </div>
+            </section>
+        </div>
+    </div>
+<!-- Подключение локальных скриптов Three.js и OrbitControls -->
+    <script src="./js/three.min.js"></script>
+    <script src="./js/OrbitControls.min.js"></script>
+   <script>
+     
+        // ---------- Глобальные константы и переменные ----------
+        const SCALE = 1;                 // 1 единица Three.js = 1 метр
+        const MOVE_STEP = 0.5;            // шаг перемещения в метрах
+
+        // Массив шаблонов технических средств охраны (ТСО)
+        const securityItems = [
+            { id: 1, name: "Камера", icon: "fa-video", width: 0.3, depth: 0.2, height: 0.2, color: "#505050", type: "box",
+              coverage: { type: 'cone', angle: 60, range: 5, color: 0x00ff00, opacity: 0.3 } },
+            { id: 2, name: "Датчик движения", icon: "fa-ruler", width: 0.15, depth: 0.1, height: 0.1, color: "#F5F5F5", type: "box",
+              coverage: { type: 'sphere', radius: 3, color: 0xffaa00, opacity: 0.3 } },
+            { id: 3, name: "Датчик двери", icon: "fa-door-open", width: 0.1, depth: 0.05, height: 0.05, color: "#C0C0C0", type: "box",
+              coverage: { type: 'sphere', radius: 1, color: 0x00aaff, opacity: 0.3 } },
+            { id: 4, name: "Панель", icon: "fa-table", width: 0.4, depth: 0.2, height: 0.15, color: "#2C2C2C", type: "box",
+              coverage: null },
+            { id: 5, name: "Сирена", icon: "fa-bell", width: 0.2, depth: 0.2, height: 0.3, color: "#FF4444", type: "cylinder",
+              coverage: { type: 'sphere', radius: 4, color: 0xff4444, opacity: 0.2 } },
+            { id: 6, name: "Считыватель", icon: "fa-id-card", width: 0.12, depth: 0.08, height: 0.12, color: "#808080", type: "box",
+              coverage: { type: 'sphere', radius: 1.5, color: 0xffff00, opacity: 0.2 } },
+            { id: 7, name: "Прожектор", icon: "fa-lightbulb", width: 0.25, depth: 0.15, height: 0.15, color: "#FFFFE0", type: "cylinder",
+              coverage: { type: 'cone', angle: 90, range: 6, color: 0xffffaa, opacity: 0.25 } },
+            { id: 8, name: "ИК-прожектор", icon: "fa-circle", width: 0.2, depth: 0.2, height: 0.15, color: "#404040", type: "cylinder",
+              coverage: { type: 'cone', angle: 70, range: 5, color: 0xff6600, opacity: 0.2 } },
+            { id: 9, name: "Датчик стекла", icon: "fa-microchip", width: 0.08, depth: 0.08, height: 0.03, color: "#D3D3D3", type: "box",
+              coverage: { type: 'sphere', radius: 2.5, color: 0xffffff, opacity: 0.15 } },
+            { id: 10, name: "Блок управления", icon: "fa-cube", width: 0.5, depth: 0.3, height: 0.2, color: "#1E1E1E", type: "box",
+              coverage: null }
+        ];
+
+        // Генератор уникальных идентификаторов для каждого экземпляра устройства
+        let instanceCounter = 0;
+        function generateInstanceId() { return instanceCounter++; }
+
+        // ---------- Получение ссылок на элементы DOM ----------
+        const view3dContainer = document.getElementById('view3d-container');
+        const furnitureList = document.getElementById('furniture-list');
+        const createRoomBtn = document.getElementById('create-room');
+        const lengthInput = document.getElementById('length');
+        const widthInput = document.getElementById('width');
+        const heightInput = document.getElementById('height');
+        const wallColorSelect = document.getElementById('wallColor');
+        const floorColorSelect = document.getElementById('floorColor');
+        const wallOpacityInput = document.getElementById('wallOpacity');
+        const opacityValueSpan = document.getElementById('opacityValue');
+        const roomAreaElement = document.getElementById('room-area');
+        const furnitureCountElement = document.getElementById('furniture-count');
+        const currentViewElement = document.getElementById('current-view');
+        const rotateYawBtn = document.getElementById('rotate-yaw-p');
+        const removeItemBtn = document.getElementById('remove-item');
+        const toggleZonesBtn = document.getElementById('toggle-zones');
+        const loadingDiv = document.getElementById('loading');
+
+        const viewTopBtn = document.getElementById('view-top');
+        const viewFrontBtn = document.getElementById('view-front');
+        const viewLeftBtn = document.getElementById('view-left');
+        const viewRightBtn = document.getElementById('view-right');
+        const viewFreeBtn = document.getElementById('view-free');
+
+        const selectedInfo = document.getElementById('selected-info');
+        const selectedName = document.getElementById('selected-name');
+        const selectedX = document.getElementById('selected-x');
+        const selectedY = document.getElementById('selected-y');
+        const selectedZ = document.getElementById('selected-z');
+        const selectedSize = document.getElementById('selected-size');
+        const selectedMountSpan = document.getElementById('selected-mount');
+
+        const zoneProperties = document.getElementById('zone-properties');
+        const zoneOpacity = document.getElementById('zone-opacity');
+        const sphereProps = document.getElementById('sphere-props');
+        const coneProps = document.getElementById('cone-props');
+        const sphereRadius = document.getElementById('sphere-radius');
+        const coneAngle = document.getElementById('cone-angle');
+        const coneRange = document.getElementById('cone-range');
+        const mountSelect = document.getElementById('mount-select');
+
+        const rotateYaw = document.getElementById('rotate-yaw');
+        const rotatePitch = document.getElementById('rotate-pitch');
+        const rotateRoll = document.getElementById('rotate-roll');
+        const yawVal = document.getElementById('yaw-val');
+        const pitchVal = document.getElementById('pitch-val');
+        const rollVal = document.getElementById('roll-val');
+        const resetRotationBtn = document.getElementById('reset-rotation');
+
+        const moveLeft = document.getElementById('move-left');
+        const moveRight = document.getElementById('move-right');
+        const moveUp = document.getElementById('move-up');
+        const moveDown = document.getElementById('move-down');
+        const moveForward = document.getElementById('move-forward');
+        const moveBackward = document.getElementById('move-backward');
+
+        // Элементы сохранения/загрузки
+        const saveProjectBtn = document.getElementById('save-project');
+        const loadProjectBtn = document.getElementById('load-project');
+        const loadFileInput = document.getElementById('load-file');
+
+        // ---------- Переменные Three.js ----------
+        let scene, camera, renderer, controls;
+        let room = { length: 10, width: 8, height: 3 }; // начальные размеры комнаты
+
+        // ---------- Состояние приложения ----------
+        let placedItems = [];          // массив размещённых устройств 
+        let selectedItem = null;        // выбранная группа Three.js
+        let selectedType = null;         // выбранный тип для размещения
+        let currentView = 'top';         // текущий вид камеры
+        let raycaster = new THREE.Raycaster();
+        let mouse = new THREE.Vector2();
+        let isPlacing = false;           // флаг режима размещения
+        let placingData = null;           // данные временного объекта
+        let placingObject = null;         // временная группа (предпросмотр)
+        let showAllZones = false;        // флаг отображения всех зон
+
+        // ---------- Вспомогательные функции для работы с 3D ----------
+
+        
+        function createCoverageMesh(coverage) {
+            if (!coverage) return null;
+            let mesh;
+            if (coverage.type === 'sphere') {
+                const geometry = new THREE.SphereGeometry(coverage.radius, 32, 16);
+                const material = new THREE.MeshPhongMaterial({
+                    color: coverage.color,
+                    transparent: true,
+                    opacity: coverage.opacity || 0.3,
+                    side: THREE.DoubleSide
+                });
+                mesh = new THREE.Mesh(geometry, material);
+            } else if (coverage.type === 'cone') {
+                const angleRad = THREE.MathUtils.degToRad(coverage.angle);
+                const radius = coverage.range * Math.tan(angleRad / 2);
+                const geometry = new THREE.ConeGeometry(radius, coverage.range, 32, 1);
+                const material = new THREE.MeshPhongMaterial({
+                    color: coverage.color,
+                    transparent: true,
+                    opacity: coverage.opacity || 0.3,
+                    side: THREE.DoubleSide
+                });
+                mesh = new THREE.Mesh(geometry, material);
+                // Конус по умолчанию направлен вверх (Y), поворачиваем вдоль +Z
+                mesh.rotation.x = Math.PI / 2;
+                // Смещаем так, чтобы вершина была в начале координат
+                mesh.position.z = coverage.range / 2;
+            }
+            if (mesh) {
+                mesh.userData = { isCoverage: true, coverageData: coverage };
+                mesh.castShadow = false;
+                mesh.receiveShadow = false;
+            }
+            return mesh;
+        }
+
+        /**
+         * Возвращает базовый поворот (Euler) для заданного типа крепления
+         * параметры {string} mount - тип крепления ('floor','ceiling','wall_front',...)
+       
+         */
+        function getBaseRotationFromMount(mount) {
+            switch (mount) {
+                case 'floor': return new THREE.Euler(0, 0, 0);
+                case 'ceiling': return new THREE.Euler(0, 0, 0);
+                case 'wall_front': return new THREE.Euler(0, Math.PI, 0);      // смотрит в -Z
+                case 'wall_back': return new THREE.Euler(0, 0, 0);              // смотрит в +Z
+                case 'wall_left': return new THREE.Euler(0, -Math.PI / 2, 0);   // смотрит в +X
+                case 'wall_right': return new THREE.Euler(0, Math.PI / 2, 0);   // смотрит в -X
+                default: return new THREE.Euler(0, 0, 0);
+            }
+        }
+
+        
+        function applyFullRotation(group, mount, yaw, pitch, roll) {
+            group.rotation.set(0, 0, 0);
+            const base = getBaseRotationFromMount(mount);
+            group.rotateX(base.x);
+            group.rotateY(base.y);
+            group.rotateZ(base.z);
+            
+            group.rotateY(yaw);
+            group.rotateX(pitch);
+            group.rotateZ(roll);
+        }
+
+        
+        function createSecurityObject(data, mount = 'floor', yaw = 0, pitch = 0, roll = 0) {
+            const group = new THREE.Group();
+
+            // Основная модель (корпус)
+            let geometry;
+            if (data.type === 'cylinder') {
+                geometry = new THREE.CylinderGeometry(data.width / 2, data.width / 2, data.height, 16);
+            } else {
+                geometry = new THREE.BoxGeometry(data.width, data.height, data.depth);
+            }
+            const material = new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.5, metalness: 0.3 });
+            const mainMesh = new THREE.Mesh(geometry, material);
+            mainMesh.castShadow = true;
+            mainMesh.receiveShadow = true;
+            mainMesh.userData = { isMain: true };
+            group.add(mainMesh);
+
+            // Зона действия (если есть)
+            if (data.coverage) {
+                const covMesh = createCoverageMesh(data.coverage);
+                if (covMesh) {
+                    covMesh.userData = { isCoverage: true, coverageData: data.coverage };
+                    group.add(covMesh);
+                }
+            }
+
+            // Применяем поворот
+            applyFullRotation(group, mount, yaw, pitch, roll);
+
+            group.position.set(data.x, data.y, data.z);
+
+            // Сохраняем метаданные в группе
+            group.userData = {
+                type: 'furniture',
+                instanceId: data.instanceId,
+                securityData: data,
+                mount: mount,
+                yaw: yaw,
+                pitch: pitch,
+                roll: roll
+            };
+
+            return group;
+        }
+
+        
+        function updateCoverageForSelected(newCoverage) {
+            if (!selectedItem) return;
+            // Удаляем старую зону
+            const oldCoverage = selectedItem.children.find(c => c.userData && c.userData.isCoverage);
+            if (oldCoverage) selectedItem.remove(oldCoverage);
+            // Добавляем новую
+            if (newCoverage) {
+                const covMesh = createCoverageMesh(newCoverage);
+                if (covMesh) {
+                    covMesh.userData = { isCoverage: true, coverageData: newCoverage };
+                    selectedItem.add(covMesh);
+                }
+            }
+            // Синхронизируем с массивом данных
+            const instanceId = selectedItem.userData.instanceId;
+            const itemData = placedItems.find(d => d.instanceId === instanceId);
+            if (itemData) {
+                itemData.coverage = newCoverage ? { ...newCoverage } : null;
+            }
+            // Обновляем видимость зоны согласно текущему режиму
+            if (selectedItem) {
+                const coverageMesh = selectedItem.children.find(c => c.userData && c.userData.isCoverage);
+                if (coverageMesh) {
+                    coverageMesh.visible = showAllZones || (selectedItem === selectedItem);
+                }
+            }
+        }
+
+        
+        function updateMountForSelected(newMount) {
+            if (!selectedItem) return;
+            const instanceId = selectedItem.userData.instanceId;
+            const itemData = placedItems.find(d => d.instanceId === instanceId);
+            if (!itemData) return;
+
+            let x = selectedItem.position.x;
+            let y = selectedItem.position.y;
+            let z = selectedItem.position.z;
+
+            const halfW = room.width / 2;
+            const halfL = room.length / 2;
+            const w = itemData.width;
+            const d = itemData.depth;
+            const h = itemData.height;
+
+            // Вычисляем новую позицию в зависимости от крепления
+            switch (newMount) {
+                case 'floor':
+                    x = Math.max(-halfW + w/2, Math.min(halfW - w/2, x));
+                    z = Math.max(-halfL + d/2, Math.min(halfL - d/2, z));
+                    y = h/2;
+                    break;
+                case 'ceiling':
+                    x = Math.max(-halfW + w/2, Math.min(halfW - w/2, x));
+                    z = Math.max(-halfL + d/2, Math.min(halfL - d/2, z));
+                    y = room.height - h/2;
+                    break;
+                case 'wall_front':
+                    x = Math.max(-halfW + w/2, Math.min(halfW - w/2, x));
+                    y = Math.max(h/2, Math.min(room.height - h/2, y));
+                    z = halfL - d/2;
+                    break;
+                case 'wall_back':
+                    x = Math.max(-halfW + w/2, Math.min(halfW - w/2, x));
+                    y = Math.max(h/2, Math.min(room.height - h/2, y));
+                    z = -halfL + d/2;
+                    break;
+                case 'wall_left':
+                    z = Math.max(-halfL + d/2, Math.min(halfL - d/2, z));
+                    y = Math.max(h/2, Math.min(room.height - h/2, y));
+                    x = -halfW + w/2;
+                    break;
+                case 'wall_right':
+                    z = Math.max(-halfL + d/2, Math.min(halfL - d/2, z));
+                    y = Math.max(h/2, Math.min(room.height - h/2, y));
+                    x = halfW - w/2;
+                    break;
+            }
+
+            selectedItem.position.set(x, y, z);
+            const yaw = selectedItem.userData.yaw || 0;
+            const pitch = selectedItem.userData.pitch || 0;
+            const roll = selectedItem.userData.roll || 0;
+            applyFullRotation(selectedItem, newMount, yaw, pitch, roll);
+
+            // Обновляем данные
+            itemData.x = x; itemData.y = y; itemData.z = z;
+            itemData.mount = newMount;
+            selectedItem.userData.mount = newMount;
+
+            // Обновляем отображение координат и крепления
+            selectedX.textContent = x.toFixed(2);
+            selectedY.textContent = y.toFixed(2);
+            selectedZ.textContent = z.toFixed(2);
+            updateMountDisplay(newMount);
+        }
+
+        
+        function moveSelected(dx, dy, dz) {
+            if (!selectedItem) return;
+            const instanceId = selectedItem.userData.instanceId;
+            const itemData = placedItems.find(d => d.instanceId === instanceId);
+            if (!itemData) return;
+
+            const mount = selectedItem.userData.mount || 'floor';
+            let newX = selectedItem.position.x + dx;
+            let newY = selectedItem.position.y + dy;
+            let newZ = selectedItem.position.z + dz;
+
+            const halfW = room.width / 2;
+            const halfL = room.length / 2;
+            const w = itemData.width;
+            const d = itemData.depth;
+            const h = itemData.height;
+
+            if (mount === 'floor' || mount === 'ceiling') {
+                newX = Math.max(-halfW + w/2, Math.min(halfW - w/2, newX));
+                newZ = Math.max(-halfL + d/2, Math.min(halfL - d/2, newZ));
+                if (mount === 'floor') newY = h/2;
+                else newY = room.height - h/2;
+            } else if (mount.startsWith('wall')) {
+                if (mount === 'wall_front' || mount === 'wall_back') {
+                    newX = Math.max(-halfW + w/2, Math.min(halfW - w/2, newX));
+                    newY = Math.max(h/2, Math.min(room.height - h/2, newY));
+                    newZ = (mount === 'wall_front') ? halfL - d/2 : -halfL + d/2;
+                } else {
+                    newZ = Math.max(-halfL + d/2, Math.min(halfL - d/2, newZ));
+                    newY = Math.max(h/2, Math.min(room.height - h/2, newY));
+                    newX = (mount === 'wall_left') ? -halfW + w/2 : halfW - w/2;
+                }
+            }
+
+            selectedItem.position.set(newX, newY, newZ);
+            itemData.x = newX; itemData.y = newY; itemData.z = newZ;
+            selectedX.textContent = newX.toFixed(2);
+            selectedY.textContent = newY.toFixed(2);
+            selectedZ.textContent = newZ.toFixed(2);
+        }
+
+        /** Обновляет текстовое отображение типа крепления */
+        function updateMountDisplay(mount) {
+            const names = {
+                'floor': 'пол',
+                'ceiling': 'потолок',
+                'wall_front': 'передняя стена',
+                'wall_back': 'задняя стена',
+                'wall_left': 'левая стена',
+                'wall_right': 'правая стена'
+            };
+            selectedMountSpan.textContent = names[mount] || mount;
+        }
+
+        
+        function updateAllZonesVisibility() {
+            scene.children.forEach(child => {
+                if (child.userData && child.userData.type === 'furniture') {
+                    const coverage = child.children.find(c => c.userData && c.userData.isCoverage);
+                    if (coverage) {
+                        if (showAllZones) {
+                            coverage.visible = true; // все зоны видны
+                        } else {
+                            // если режим "только выбранное", то зона видна только у выбранного устройства
+                            coverage.visible = (child === selectedItem);
+                        }
+                    }
+                }
+            });
+            // Обновляем текст кнопки
+            toggleZonesBtn.innerHTML = showAllZones ? '<i class="fas fa-eye-slash"></i> Скрыть все зоны' : '<i class="fas fa-eye"></i> Показать все зоны';
+        }
+
+        
+
+        /** Заполняет список доступных устройств (ТСО) в левой панели */
+        function renderSecurityList() {
+            furnitureList.innerHTML = '';
+            securityItems.forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'furniture-item';
+                el.dataset.id = item.id;
+                el.innerHTML = `
+                    <div class="furniture-icon">
+                        <i class="fas ${item.icon}" style="color: ${item.color};"></i>
+                    </div>
+                    <div class="furniture-name">${item.name}</div>
+                    <div class="furniture-size">${item.width.toFixed(1)}x${item.depth.toFixed(1)}x${item.height.toFixed(1)} м</div>
+                `;
+                el.addEventListener('click', () => selectType(item));
+                furnitureList.appendChild(el);
+            });
+        }
+
+        /** Выбор типа устройства для размещения (переход в режим размещения) */
+        function selectType(item) {
+            selectedType = item;
+            isPlacing = true;
+            // Подсветка выбранного элемента списка
+            document.querySelectorAll('.furniture-item').forEach(el => el.style.borderColor = '#1a5a9e');
+            const selectedEl = document.querySelector(`.furniture-item[data-id="${item.id}"]`);
+            if (selectedEl) selectedEl.style.borderColor = '#4cc9f0';
+
+            // Удаляем предыдущий временный объект
+            if (placingObject) scene.remove(placingObject);
+
+            // Создаём временные данные (позиция пока нулевая)
+            placingData = { ...item, instanceId: generateInstanceId(), x: 0, y: item.height/2, z: 0 };
+            placingObject = createSecurityObject(placingData, 'floor', 0, 0, 0);
+            // Делаем объект полупрозрачным для предпросмотра
+            placingObject.traverse(obj => {
+                if (obj.isMesh) {
+                    obj.material.transparent = true;
+                    obj.material.opacity = 0.7;
+                    obj.castShadow = false;
+                    obj.receiveShadow = false;
+                }
+            });
+            scene.add(placingObject);
+        }
+
+        // ---------- Инициализация Three.js ----------
+        function init3D() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0f172a); // тёмный фон
+
+            // Камера
+            const aspect = view3dContainer.clientWidth / view3dContainer.clientHeight;
+            camera = new THREE.PerspectiveCamera(60, aspect, 0.1, 1000);
+            camera.position.set(0, 15, 15);
+            camera.lookAt(0, 0, 0);
+
+            // Рендерер с тенями
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(view3dContainer.clientWidth, view3dContainer.clientHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            view3dContainer.innerHTML = '';
+            view3dContainer.appendChild(renderer.domElement);
+            if (loadingDiv) loadingDiv.style.display = 'none';
+
+            // Орбитальный контроллер
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.minDistance = 5;
+            controls.maxDistance = 50;
+            controls.maxPolarAngle = Math.PI;
+
+            // Освещение
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 20, 5);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            scene.add(directionalLight);
+
+            // Создаём комнату с текущими параметрами
+            createRoom3D();
+
+            // Запуск анимации
+            animate();
+
+            // Обработчики событий окна и мыши
+            window.addEventListener('resize', onWindowResize);
+            renderer.domElement.addEventListener('click', onCanvasClick);
+            renderer.domElement.addEventListener('mousemove', onCanvasMouseMove);
+        }
+
+        /** Создаёт геометрию комнаты (пол, стены, потолок) и восстанавливает устройства */
+        function createRoom3D() {
+            // Удаляем старые объекты комнаты (стены, пол, потолок)
+            scene.children = scene.children.filter(child => !(child.userData && child.userData.type === 'room'));
+
+            // Считываем параметры из полей ввода
+            room.length = parseFloat(lengthInput.value) || 10;
+            room.width = parseFloat(widthInput.value) || 8;
+            room.height = parseFloat(heightInput.value) || 3;
+
+            const wallColor = wallColorSelect.value;
+            const floorColor = floorColorSelect.value;
+            const wallOpacity = parseFloat(wallOpacityInput.value);
+
+            // Пол
+            const floorGeo = new THREE.PlaneGeometry(room.width, room.length);
+            const floorMat = new THREE.MeshStandardMaterial({ color: floorColor, roughness: 0.8 });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.y = 0;
+            floor.receiveShadow = true;
+            floor.userData = { type: 'room', part: 'floor' };
+            scene.add(floor);
+
+            // Материал стен (с прозрачностью)
+            const wallMat = new THREE.MeshStandardMaterial({ color: wallColor, roughness: 0.7, transparent: true, opacity: wallOpacity });
+
+            // Задняя стена (-Z)
+            const backWall = new THREE.Mesh(new THREE.BoxGeometry(room.width, room.height, 0.1), wallMat);
+            backWall.position.set(0, room.height/2, -room.length/2);
+            backWall.castShadow = true; backWall.receiveShadow = true;
+            backWall.userData = { type: 'room', part: 'wall', wallSide: 'back' };
+            scene.add(backWall);
+
+            // Передняя стена (+Z)
+            const frontWall = new THREE.Mesh(new THREE.BoxGeometry(room.width, room.height, 0.1), wallMat);
+            frontWall.position.set(0, room.height/2, room.length/2);
+            frontWall.castShadow = true; frontWall.receiveShadow = true;
+            frontWall.userData = { type: 'room', part: 'wall', wallSide: 'front' };
+            scene.add(frontWall);
+
+            // Левая стена (-X)
+            const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.1, room.height, room.length), wallMat);
+            leftWall.position.set(-room.width/2, room.height/2, 0);
+            leftWall.castShadow = true; leftWall.receiveShadow = true;
+            leftWall.userData = { type: 'room', part: 'wall', wallSide: 'left' };
+            scene.add(leftWall);
+
+            // Правая стена (+X)
+            const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.1, room.height, room.length), wallMat);
+            rightWall.position.set(room.width/2, room.height/2, 0);
+            rightWall.castShadow = true; rightWall.receiveShadow = true;
+            rightWall.userData = { type: 'room', part: 'wall', wallSide: 'right' };
+            scene.add(rightWall);
+
+            // Потолок (полупрозрачный)
+            const ceilingMat = new THREE.MeshStandardMaterial({ color: 0xf0f0f0, roughness: 0.9, transparent: true, opacity: 0.3 });
+            const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(room.width, room.length), ceilingMat);
+            ceiling.rotation.x = Math.PI / 2;
+            ceiling.position.y = room.height;
+            ceiling.receiveShadow = true;
+            ceiling.userData = { type: 'room', part: 'ceiling' };
+            scene.add(ceiling);
+
+            // Удаляем старые устройства из сцены
+            scene.children = scene.children.filter(child => !(child.userData && child.userData.type === 'furniture'));
+
+            // Пересоздаём все устройства из массива placedItems
+            placedItems.forEach(item => {
+                const group = createSecurityObject(item, item.mount || 'floor', item.yaw || 0, item.pitch || 0, item.roll || 0);
+                // Устанавливаем видимость зоны в соответствии с текущим режимом
+                const coverage = group.children.find(c => c.userData && c.userData.isCoverage);
+                if (coverage) {
+                    coverage.visible = showAllZones; // если showAllZones = true, то зона видна сразу
+                }
+                scene.add(group);
+            });
+
+            // Сброс выделения (так как старые объекты удалены)
+            if (selectedItem) { selectedItem = null; selectedInfo.style.display = 'none'; zoneProperties.style.display = 'none'; }
+            if (placingObject) { scene.remove(placingObject); placingObject = null; isPlacing = false; }
+
+            // Обновляем видимость зон с учётом режима
+            updateAllZonesVisibility();
+            updateStats();
+        }
+
+        /** Обновляет прозрачность стен при изменении ползунка */
+        function updateWallOpacity() {
+            const opacity = parseFloat(wallOpacityInput.value);
+            opacityValueSpan.textContent = opacity.toFixed(2);
+            scene.children.forEach(child => {
+                if (child.userData && child.userData.type === 'room' && child.userData.part === 'wall') {
+                    if (Array.isArray(child.material)) child.material.forEach(mat => mat.opacity = opacity);
+                    else child.material.opacity = opacity;
+                }
+            });
+        }
+
+        // ---------- Обработчики событий мыши на canvas ----------
+        function onCanvasClick(event) {
+            // Режим размещения: пытаемся разместить новый объект
+            if (isPlacing && placingData) {
+                const rect = renderer.domElement.getBoundingClientRect();
+                mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+                mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+
+                // Находим все поверхности (пол, потолок, стены)
+                const surfaces = scene.children.filter(c => c.userData && (c.userData.part === 'floor' || c.userData.part === 'ceiling' || (c.userData.part === 'wall' && c.userData.wallSide)));
+                const intersects = raycaster.intersectObjects(surfaces);
+
+                if (intersects.length > 0) {
+                    const hit = intersects[0];
+                    const point = hit.point;
+                    const surface = hit.object.userData;
+                    let mount = 'floor';
+                    let x = point.x, y = point.y, z = point.z;
+                    const w = placingData.width, d = placingData.depth, h = placingData.height;
+
+                    if (surface.part === 'floor') {
+                        mount = 'floor';
+                        x = Math.max(-room.width/2 + w/2, Math.min(room.width/2 - w/2, point.x));
+                        z = Math.max(-room.length/2 + d/2, Math.min(room.length/2 - d/2, point.z));
+                        y = h/2;
+                    } else if (surface.part === 'ceiling') {
+                        mount = 'ceiling';
+                        x = Math.max(-room.width/2 + w/2, Math.min(room.width/2 - w/2, point.x));
+                        z = Math.max(-room.length/2 + d/2, Math.min(room.length/2 - d/2, point.z));
+                        y = room.height - h/2;
+                    } else if (surface.part === 'wall') {
+                        const side = surface.wallSide;
+                        mount = 'wall_' + side;
+                        if (side === 'front' || side === 'back') {
+                            x = Math.max(-room.width/2 + w/2, Math.min(room.width/2 - w/2, point.x));
+                            y = Math.max(h/2, Math.min(room.height - h/2, point.y));
+                            z = (side === 'front') ? room.length/2 - d/2 : -room.length/2 + d/2;
+                        } else {
+                            z = Math.max(-room.length/2 + d/2, Math.min(room.length/2 - d/2, point.z));
+                            y = Math.max(h/2, Math.min(room.height - h/2, point.y));
+                            x = (side === 'left') ? -room.width/2 + w/2 : room.width/2 - w/2;
+                        }
+                    }
+
+                    const newItem = { ...placingData, instanceId: generateInstanceId(), x, y, z, mount, yaw:0, pitch:0, roll:0 };
+                    placedItems.push(newItem);
+                    const group = createSecurityObject(newItem, mount, 0, 0, 0);
+                    // Устанавливаем видимость зоны в соответствии с режимом
+                    const coverage = group.children.find(c => c.userData && c.userData.isCoverage);
+                    if (coverage) {
+                        coverage.visible = showAllZones; // если showAllZones true, то зона видна сразу
+                    }
+                    scene.add(group);
+                    selectItem(group); // при выборе зона станет видимой (но если showAllZones, она уже видна)
+
+                    scene.remove(placingObject); placingObject = null; isPlacing = false;
+                    updateStats();
+                }
+                return;
+            }
+
+            // Режим выбора устройства (если не размещаем)
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+
+            const groups = scene.children.filter(c => c.userData?.type === 'furniture');
+            const intersects = raycaster.intersectObjects(groups, true); // проверяем всех потомков
+
+            if (intersects.length > 0) {
+                let selectedGroup = intersects[0].object;
+                // Поднимаемся по иерархии до группы с типом 'furniture'
+                while (selectedGroup && selectedGroup.userData?.type !== 'furniture') {
+                    selectedGroup = selectedGroup.parent;
+                }
+                if (selectedGroup) selectItem(selectedGroup);
+            }
+        }
+
+        /** Перемещение временного объекта при движении мыши (режим размещения) */
+        function onCanvasMouseMove(event) {
+            if (!isPlacing || !placingObject) return;
+
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+
+            const surfaces = scene.children.filter(c => c.userData && (c.userData.part === 'floor' || c.userData.part === 'ceiling' || (c.userData.part === 'wall' && c.userData.wallSide)));
+            const intersects = raycaster.intersectObjects(surfaces);
+
+            if (intersects.length > 0) {
+                const hit = intersects[0];
+                const point = hit.point;
+                const surface = hit.object.userData;
+                let x = point.x, y = point.y, z = point.z;
+                const w = placingData.width, d = placingData.depth, h = placingData.height;
+
+                if (surface.part === 'floor') {
+                    x = Math.max(-room.width/2 + w/2, Math.min(room.width/2 - w/2, point.x));
+                    z = Math.max(-room.length/2 + d/2, Math.min(room.length/2 - d/2, point.z));
+                    y = h/2;
+                } else if (surface.part === 'ceiling') {
+                    x = Math.max(-room.width/2 + w/2, Math.min(room.width/2 - w/2, point.x));
+                    z = Math.max(-room.length/2 + d/2, Math.min(room.length/2 - d/2, point.z));
+                    y = room.height - h/2;
+                } else if (surface.part === 'wall') {
+                    const side = surface.wallSide;
+                    if (side === 'front' || side === 'back') {
+                        x = Math.max(-room.width/2 + w/2, Math.min(room.width/2 - w/2, point.x));
+                        y = Math.max(h/2, Math.min(room.height - h/2, point.y));
+                        z = (side === 'front') ? room.length/2 - d/2 : -room.length/2 + d/2;
+                    } else {
+                        z = Math.max(-room.length/2 + d/2, Math.min(room.length/2 - d/2, point.z));
+                        y = Math.max(h/2, Math.min(room.height - h/2, point.y));
+                        x = (side === 'left') ? -room.width/2 + w/2 : room.width/2 - w/2;
+                    }
+                }
+                placingObject.position.set(x, y, z);
+            }
+        }
+
+        /** Выбор устройства: подсветка, отображение зоны и заполнение панели свойств */
+        function selectItem(group) {
+            // Снимаем подсветку с предыдущего
+            if (selectedItem) {
+                selectedItem.traverse(obj => {
+                    if (obj.isMesh && obj.userData?.isMain) {
+                        if (Array.isArray(obj.material)) obj.material.forEach(m => m.emissive.setHex(0));
+                        else obj.material.emissive.setHex(0);
+                    }
+                });
+                // Скрываем зону предыдущего, если не включён режим показа всех
+                if (!showAllZones) {
+                    const oldCoverage = selectedItem.children.find(c => c.userData && c.userData.isCoverage);
+                    if (oldCoverage) oldCoverage.visible = false;
+                }
+            }
+            selectedItem = group;
+
+            // Подсвечиваем выбранное
+            group.traverse(obj => {
+                if (obj.isMesh && obj.userData?.isMain) {
+                    if (Array.isArray(obj.material)) obj.material.forEach(m => m.emissive.setHex(0x333333));
+                    else obj.material.emissive.setHex(0x333333);
+                }
+            });
+            // Показываем зону выбранного, если не включён режим показа всех (иначе она уже видна)
+            if (!showAllZones) {
+                const coverage = group.children.find(c => c.userData && c.userData.isCoverage);
+                if (coverage) coverage.visible = true;
+            }
+
+            const data = group.userData.securityData;
+            const mount = group.userData.mount || 'floor';
+            const yaw = group.userData.yaw || 0;
+            const pitch = group.userData.pitch || 0;
+            const roll = group.userData.roll || 0;
+
+            selectedInfo.style.display = 'block';
+            selectedName.textContent = data.name;
+            selectedX.textContent = group.position.x.toFixed(2);
+            selectedY.textContent = group.position.y.toFixed(2);
+            selectedZ.textContent = group.position.z.toFixed(2);
+            selectedSize.textContent = `${data.width}м × ${data.depth}м × ${data.height}м`;
+            updateMountDisplay(mount);
+
+            // Отображаем блок свойств и заполняем значения
+            zoneProperties.style.display = 'block';
+            if (data.coverage) {
+                zoneOpacity.value = data.coverage.opacity;
+                if (data.coverage.type === 'sphere') {
+                    sphereProps.style.display = 'block'; coneProps.style.display = 'none';
+                    sphereRadius.value = data.coverage.radius;
+                } else if (data.coverage.type === 'cone') {
+                    sphereProps.style.display = 'none'; coneProps.style.display = 'block';
+                    coneAngle.value = data.coverage.angle;
+                    coneRange.value = data.coverage.range;
+                }
+            } else {
+                sphereProps.style.display = 'none'; coneProps.style.display = 'none';
+            }
+            mountSelect.value = mount;
+
+            // Устанавливаем ползунки поворота
+            rotateYaw.value = THREE.MathUtils.radToDeg(yaw);
+            rotatePitch.value = THREE.MathUtils.radToDeg(pitch);
+            rotateRoll.value = THREE.MathUtils.radToDeg(roll);
+            yawVal.textContent = rotateYaw.value + '°';
+            pitchVal.textContent = rotatePitch.value + '°';
+            rollVal.textContent = rotateRoll.value + '°';
+        }
+
+        // ---------- Функции сохранения/загрузки ----------
+        function saveProject() {
+            // Собираем данные о комнате и устройствах
+            const projectData = {
+                room: {
+                    length: room.length,
+                    width: room.width,
+                    height: room.height,
+                    wallColor: wallColorSelect.value,
+                    floorColor: floorColorSelect.value,
+                    wallOpacity: parseFloat(wallOpacityInput.value)
+                },
+                devices: placedItems.map(item => ({
+                    // сохраняем все поля, кроме instanceId (он будет перегенерирован при загрузке)
+                    id: item.id,
+                    name: item.name,
+                    icon: item.icon,
+                    width: item.width,
+                    depth: item.depth,
+                    height: item.height,
+                    color: item.color,
+                    type: item.type,
+                    coverage: item.coverage ? { ...item.coverage } : null,
+                    x: item.x,
+                    y: item.y,
+                    z: item.z,
+                    mount: item.mount,
+                    yaw: item.yaw,
+                    pitch: item.pitch,
+                    roll: item.roll
+                }))
+            };
+
+            const json = JSON.stringify(projectData, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'security_project.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function loadProject(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    // Восстанавливаем параметры комнаты
+                    if (data.room) {
+                        lengthInput.value = data.room.length;
+                        widthInput.value = data.room.width;
+                        heightInput.value = data.room.height;
+                        wallColorSelect.value = data.room.wallColor;
+                        floorColorSelect.value = data.room.floorColor;
+                        wallOpacityInput.value = data.room.wallOpacity;
+                        opacityValueSpan.textContent = data.room.wallOpacity.toFixed(2);
+                    }
+
+                    // Восстанавливаем устройства (генерируем новые instanceId)
+                    placedItems = (data.devices || []).map(dev => ({
+                        ...dev,
+                        instanceId: generateInstanceId()
+                    }));
+
+                    // Пересоздаём сцену
+                    createRoom3D();
+
+                    // Сбрасываем выделение
+                    if (selectedItem) {
+                        selectedItem = null;
+                        selectedInfo.style.display = 'none';
+                        zoneProperties.style.display = 'none';
+                    }
+
+                    alert('Проект успешно загружен!');
+                } catch (err) {
+                    alert('Ошибка загрузки файла: неверный формат');
+                }
+                // Очищаем input, чтобы можно было загрузить тот же файл повторно
+                loadFileInput.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        // ---------- Обработчики кнопок ----------
+        function setupEventListeners() {
+            createRoomBtn.addEventListener('click', createRoom3D);
+            rotateYawBtn.addEventListener('click', () => {
+                if (!selectedItem) return;
+                const mount = selectedItem.userData.mount;
+                let yaw = selectedItem.userData.yaw || 0;
+                yaw += Math.PI/4;
+                const pitch = selectedItem.userData.pitch || 0;
+                const roll = selectedItem.userData.roll || 0;
+                applyFullRotation(selectedItem, mount, yaw, pitch, roll);
+                const instanceId = selectedItem.userData.instanceId;
+                const itemData = placedItems.find(d => d.instanceId === instanceId);
+                if (itemData) itemData.yaw = yaw;
+                selectedItem.userData.yaw = yaw;
+                const deg = THREE.MathUtils.radToDeg(yaw) % 360;
+                rotateYaw.value = deg;
+                yawVal.textContent = deg + '°';
+            });
+            removeItemBtn.addEventListener('click', removeSelected);
+
+            toggleZonesBtn.addEventListener('click', () => {
+                showAllZones = !showAllZones;
+                updateAllZonesVisibility();
+            });
+
+            viewTopBtn.addEventListener('click', () => setView('top'));
+            viewFrontBtn.addEventListener('click', () => setView('front'));
+            viewLeftBtn.addEventListener('click', () => setView('left'));
+            viewRightBtn.addEventListener('click', () => setView('right'));
+            viewFreeBtn.addEventListener('click', () => setView('free'));
+
+            wallOpacityInput.addEventListener('input', updateWallOpacity);
+
+            zoneOpacity.addEventListener('input', () => {
+                if (!selectedItem) return;
+                const val = parseFloat(zoneOpacity.value);
+                selectedItem.traverse(obj => {
+                    if (obj.userData?.isCoverage && obj.material) {
+                        if (Array.isArray(obj.material)) obj.material.forEach(m => m.opacity = val);
+                        else obj.material.opacity = val;
+                    }
+                });
+                const instanceId = selectedItem.userData.instanceId;
+                const itemData = placedItems.find(d => d.instanceId === instanceId);
+                if (itemData && itemData.coverage) itemData.coverage.opacity = val;
+            });
+
+            sphereRadius.addEventListener('change', () => {
+                if (!selectedItem) return;
+                const val = parseFloat(sphereRadius.value);
+                const instanceId = selectedItem.userData.instanceId;
+                const itemData = placedItems.find(d => d.instanceId === instanceId);
+                if (itemData && itemData.coverage?.type === 'sphere') {
+                    itemData.coverage.radius = val;
+                    updateCoverageForSelected(itemData.coverage);
+                }
+            });
+
+            coneAngle.addEventListener('change', () => {
+                if (!selectedItem) return;
+                const val = parseFloat(coneAngle.value);
+                const instanceId = selectedItem.userData.instanceId;
+                const itemData = placedItems.find(d => d.instanceId === instanceId);
+                if (itemData && itemData.coverage?.type === 'cone') {
+                    itemData.coverage.angle = val;
+                    updateCoverageForSelected(itemData.coverage);
+                }
+            });
+
+            coneRange.addEventListener('change', () => {
+                if (!selectedItem) return;
+                const val = parseFloat(coneRange.value);
+                const instanceId = selectedItem.userData.instanceId;
+                const itemData = placedItems.find(d => d.instanceId === instanceId);
+                if (itemData && itemData.coverage?.type === 'cone') {
+                    itemData.coverage.range = val;
+                    updateCoverageForSelected(itemData.coverage);
+                }
+            });
+
+            mountSelect.addEventListener('change', () => {
+                if (!selectedItem) return;
+                updateMountForSelected(mountSelect.value);
+            });
+
+            rotateYaw.addEventListener('input', () => {
+                if (!selectedItem) return;
+                const deg = parseFloat(rotateYaw.value);
+                yawVal.textContent = deg + '°';
+                const yaw = THREE.MathUtils.degToRad(deg);
+                const mount = selectedItem.userData.mount;
+                const pitch = selectedItem.userData.pitch || 0;
+                const roll = selectedItem.userData.roll || 0;
+                applyFullRotation(selectedItem, mount, yaw, pitch, roll);
+                const instanceId = selectedItem.userData.instanceId;
+                const itemData = placedItems.find(d => d.instanceId === instanceId);
+                if (itemData) itemData.yaw = yaw;
+                selectedItem.userData.yaw = yaw;
+            });
+            rotatePitch.addEventListener('input', () => {
+                if (!selectedItem) return;
+                const deg = parseFloat(rotatePitch.value);
+                pitchVal.textContent = deg + '°';
+                const pitch = THREE.MathUtils.degToRad(deg);
+                const mount = selectedItem.userData.mount;
+                const yaw = selectedItem.userData.yaw || 0;
+                const roll = selectedItem.userData.roll || 0;
+                applyFullRotation(selectedItem, mount, yaw, pitch, roll);
+                const instanceId = selectedItem.userData.instanceId;
+                const itemData = placedItems.find(d => d.instanceId === instanceId);
+                if (itemData) itemData.pitch = pitch;
+                selectedItem.userData.pitch = pitch;
+            });
+            rotateRoll.addEventListener('input', () => {
+                if (!selectedItem) return;
+                const deg = parseFloat(rotateRoll.value);
+                rollVal.textContent = deg + '°';
+                const roll = THREE.MathUtils.degToRad(deg);
+                const mount = selectedItem.userData.mount;
+                const yaw = selectedItem.userData.yaw || 0;
+                const pitch = selectedItem.userData.pitch || 0;
+                applyFullRotation(selectedItem, mount, yaw, pitch, roll);
+                const instanceId = selectedItem.userData.instanceId;
+                const itemData = placedItems.find(d => d.instanceId === instanceId);
+                if (itemData) itemData.roll = roll;
+                selectedItem.userData.roll = roll;
+            });
+
+            resetRotationBtn.addEventListener('click', () => {
+                if (!selectedItem) return;
+                const mount = selectedItem.userData.mount;
+                applyFullRotation(selectedItem, mount, 0, 0, 0);
+                const instanceId = selectedItem.userData.instanceId;
+                const itemData = placedItems.find(d => d.instanceId === instanceId);
+                if (itemData) { itemData.yaw = 0; itemData.pitch = 0; itemData.roll = 0; }
+                selectedItem.userData.yaw = 0; selectedItem.userData.pitch = 0; selectedItem.userData.roll = 0;
+                rotateYaw.value = 0; rotatePitch.value = 0; rotateRoll.value = 0;
+                yawVal.textContent = '0°'; pitchVal.textContent = '0°'; rollVal.textContent = '0°';
+            });
+
+            moveLeft.addEventListener('click', () => moveSelected(-MOVE_STEP, 0, 0));
+            moveRight.addEventListener('click', () => moveSelected(MOVE_STEP, 0, 0));
+            moveUp.addEventListener('click', () => moveSelected(0, MOVE_STEP, 0));
+            moveDown.addEventListener('click', () => moveSelected(0, -MOVE_STEP, 0));
+            moveForward.addEventListener('click', () => moveSelected(0, 0, MOVE_STEP));
+            moveBackward.addEventListener('click', () => moveSelected(0, 0, -MOVE_STEP));
+
+            // Сохранение/загрузка
+            saveProjectBtn.addEventListener('click', saveProject);
+            loadProjectBtn.addEventListener('click', () => loadFileInput.click());
+            loadFileInput.addEventListener('change', loadProject);
+        }
+
+        /** Устанавливает вид камеры (вид сверху, спереди, слева, справа, свободный) */
+        function setView(view) {
+            currentView = view;
+            document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`view-${view}`).classList.add('active');
+            controls.enabled = (view === 'free');
+            switch(view) {
+                case 'top': camera.position.set(0, room.height*2, 0); camera.lookAt(0,0,0); currentViewElement.textContent = "Сверху"; break;
+                case 'front': camera.position.set(0, room.height, room.length*1.5); camera.lookAt(0, room.height/2, 0); currentViewElement.textContent = "Спереди"; break;
+                case 'left': camera.position.set(-room.width*1.5, room.height, 0); camera.lookAt(0, room.height/2, 0); currentViewElement.textContent = "Слева"; break;
+                case 'right': camera.position.set(room.width*1.5, room.height, 0); camera.lookAt(0, room.height/2, 0); currentViewElement.textContent = "Справа"; break;
+                case 'free': currentViewElement.textContent = "Свободный обзор"; break;
+            }
+            controls.update();
+        }
+
+        /** Удаляет выбранное устройство */
+        function removeSelected() {
+            if (!selectedItem) return;
+            const instanceId = selectedItem.userData.instanceId;
+            scene.remove(selectedItem);
+            placedItems = placedItems.filter(d => d.instanceId !== instanceId);
+            selectedItem = null;
+            selectedInfo.style.display = 'none';
+            zoneProperties.style.display = 'none';
+            // После удаления нужно обновить видимость зон
+            updateAllZonesVisibility();
+            updateStats();
+        }
+
+        /** Обновляет статистику (площадь комнаты, количество устройств) */
+        function updateStats() {
+            const area = room.width * room.length;
+            roomAreaElement.textContent = `${area.toFixed(1)} м²`;
+            furnitureCountElement.textContent = placedItems.length;
+        }
+
+        /** Обработка изменения размера окна */
+        function onWindowResize() {
+            camera.aspect = view3dContainer.clientWidth / view3dContainer.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(view3dContainer.clientWidth, view3dContainer.clientHeight);
+        }
+
+        /** Анимационный цикл */
+        function animate() {
+            requestAnimationFrame(animate);
+            if (controls.enabled) controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // ---------- Запуск приложения после полной загрузки Дом ----------
+        document.addEventListener('DOMContentLoaded', () => {
+            renderSecurityList();
+            init3D();
+            setupEventListeners();
+            updateStats();
+            opacityValueSpan.textContent = wallOpacityInput.value;
+        });
+    </script>
+
+
+</body>
+
+
+
+
+</html>
