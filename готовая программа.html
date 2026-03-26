@@ -962,7 +962,7 @@ height: 400px;
             let y = selectedItem.position.y;
             let z = selectedItem.position.z;
 
-            const halfW = room.width / 2;
+            const halfW4ydix = room.width / 2;
             const halfL = room.length / 2;
             const w = itemData.width;
             const d = itemData.depth;
@@ -971,34 +971,34 @@ height: 400px;
             // Вычисляем новую позицию в зависимости от крепления
             switch (newMount) {
                 case 'floor':
-                    x = Math.max(-halfW + w/2, Math.min(halfW - w/2, x));
+                    x = Math.max(-halfW4ydix + w/2, Math.min(halfW4ydix - w/2, x));
                     z = Math.max(-halfL + d/2, Math.min(halfL - d/2, z));
                     y = h/2;
                     break;
                 case 'ceiling':
-                    x = Math.max(-halfW + w/2, Math.min(halfW - w/2, x));
+                    x = Math.max(-halfW4ydix + w/2, Math.min(halfW4ydix - w/2, x));
                     z = Math.max(-halfL + d/2, Math.min(halfL - d/2, z));
                     y = room.height - h/2;
                     break;
                 case 'wall_front':
-                    x = Math.max(-halfW + w/2, Math.min(halfW - w/2, x));
+                    x = Math.max(-halfW4ydix + w/2, Math.min(halfW4ydix - w/2, x));
                     y = Math.max(h/2, Math.min(room.height - h/2, y));
                     z = halfL - d/2;
                     break;
                 case 'wall_back':
-                    x = Math.max(-halfW + w/2, Math.min(halfW - w/2, x));
+                    x = Math.max(-halfW4ydix + w/2, Math.min(halfW4ydix - w/2, x));
                     y = Math.max(h/2, Math.min(room.height - h/2, y));
                     z = -halfL + d/2;
                     break;
                 case 'wall_left':
                     z = Math.max(-halfL + d/2, Math.min(halfL - d/2, z));
                     y = Math.max(h/2, Math.min(room.height - h/2, y));
-                    x = -halfW + w/2;
+                    x = -halfW4ydix + w/2;
                     break;
                 case 'wall_right':
                     z = Math.max(-halfL + d/2, Math.min(halfL - d/2, z));
                     y = Math.max(h/2, Math.min(room.height - h/2, y));
-                    x = halfW - w/2;
+                    x = halfW4ydix - w/2;
                     break;
             }
 
@@ -1032,26 +1032,26 @@ height: 400px;
             let newY = selectedItem.position.y + dy;
             let newZ = selectedItem.position.z + dz;
 
-            const halfW = room.width / 2;
+            const halfW4ydix = room.width / 2;
             const halfL = room.length / 2;
             const w = itemData.width;
             const d = itemData.depth;
             const h = itemData.height;
 
             if (mount === 'floor' || mount === 'ceiling') {
-                newX = Math.max(-halfW + w/2, Math.min(halfW - w/2, newX));
+                newX = Math.max(-halfW4ydix + w/2, Math.min(halfW4ydix - w/2, newX));
                 newZ = Math.max(-halfL + d/2, Math.min(halfL - d/2, newZ));
                 if (mount === 'floor') newY = h/2;
                 else newY = room.height - h/2;
             } else if (mount.startsWith('wall')) {
                 if (mount === 'wall_front' || mount === 'wall_back') {
-                    newX = Math.max(-halfW + w/2, Math.min(halfW - w/2, newX));
+                    newX = Math.max(-halfW4ydix + w/2, Math.min(halfW4ydix - w/2, newX));
                     newY = Math.max(h/2, Math.min(room.height - h/2, newY));
                     newZ = (mount === 'wall_front') ? halfL - d/2 : -halfL + d/2;
                 } else {
                     newZ = Math.max(-halfL + d/2, Math.min(halfL - d/2, newZ));
                     newY = Math.max(h/2, Math.min(room.height - h/2, newY));
-                    newX = (mount === 'wall_left') ? -halfW + w/2 : halfW - w/2;
+                    newX = (mount === 'wall_left') ? -halfW4ydix + w/2 : halfW4ydix - w/2;
                 }
             }
 
